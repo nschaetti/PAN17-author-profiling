@@ -1,6 +1,9 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 # Import
 import os
+from .Author import Author
 
 
 # Represents a data set.
@@ -44,7 +47,7 @@ class Dataset(object):
         # List files
         for f in os.listdir(directory_path):
             if os.path.isfile(os.path.join(directory_path, f)) and f[-4:] == ".xml":
-                self._authors.append(os.path.join(self._working_directory, f))
+                self._authors.append(f)
             # end if
         # end for
     # end load
@@ -78,10 +81,12 @@ class Dataset(object):
         :return: The next element.
         """
         if self._current_author >= self.n_authors():
+            self._current_author = 0
             raise StopIteration
         else:
             self._current_author += 1
-            return self._authors[self._current_author-1]
+            author = Author.open(self._working_directory, self._authors[self._current_author-1])
+            return author
         # end if
     # end next
 
