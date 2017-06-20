@@ -27,13 +27,13 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.autograd import Variable
-from tools.PAN17Classifier import PAN17Classifier
+from classifiers.Classifier import Classifier
 from ConvNet import ConvNet
 import pickle
 #import torch.utils.serialization as ts
 
 
-class DeepNeuralModel(PAN17Classifier):
+class DeepNeuralModel(Classifier):
 
     # Constructor
     def __init__(self, model, classes=[], cuda=False, lr=0.01, momentum=0.5, log_interval=10, seed=1):
