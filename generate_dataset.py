@@ -29,10 +29,12 @@ import random
 import string
 import json
 import codecs
+import re
 
 ####################################################
 # Functions
 ####################################################
+
 
 # Parse truth file
 def parse_truth_file(truth_file):
@@ -119,8 +121,20 @@ if __name__ == "__main__":
             with codecs.open(destination_path, 'w', encoding='utf-8') as f:
                 # For each document
                 for document in tree.xpath("/author/documents/document"):
+                    # Get text
+                    document_text = document.text
+
+                    # Fin all URLs
+                    urls = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+',
+                                      document_text)
+
+                    # Remove all URLs
+                    for url in urls:
+                        document_text = document_text.replace(url, u"")
+                    # end for
+
                     # Write the document
-                    f.write(document.text.replace(u'\n', u' ') + u"\n")
+                    f.write(document_text.replace(u'\n', u' ') + u"\n")
                 # end for
             # end with
 
