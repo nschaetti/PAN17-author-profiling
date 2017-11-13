@@ -24,10 +24,6 @@
 
 import nsNLP
 import numpy as np
-from tools.ResultManager import ResultManager
-from tools.functions import create_tokenizer
-from corpus.CrossValidation import CrossValidation
-from corpus.Corpus import Corpus
 
 ####################################################
 # Main function
@@ -64,11 +60,11 @@ if __name__ == "__main__":
     args.parse()
 
     # Corpus
-    reteursC50 = Corpus(args.dataset)
+    pan17corpus = nsNLP.data.Corpus(args.dataset)
 
     # Parameter space
     param_space = nsNLP.tools.ParameterSpace(args.get_space())
-
+    print(args.k)
     # Experiment
     xp = nsNLP.tools.ResultManager\
     (
@@ -76,26 +72,26 @@ if __name__ == "__main__":
         args.name,
         args.description,
         args.get_space(),
-        args.n_samples,
+        1,
         args.k,
         verbose=args.verbose
     )
 
     # Author list
-    authors = reteursC50.get_authors()[:args.n_authors]
-    author_list = reteursC50.get_authors_list()[:args.n_authors]
+    authors = pan17corpus.get_authors()
 
-    # Print authors
-    xp.write(u"Authors : {}".format(author_list), log_level=0)
+    # Bag of word features
+    bow = nsNLP.features.BagOfWords()
 
     # Iterate
     for space in param_space:
+        print(space)
         # Params
-        smoothing_type = int(space['smoothing_type'])
-        smoothing_param = space['smoothing_param']
+        smoothing_type = space['smoothing_type'][0][0]
+        smoothing_param = float(space['smoothing_param'])
 
         # Choose the right tokenizer
-        tokenizer = create_tokenizer(args.tokenizer, "")
+        tokenizer = nsNLP.tokenization.NLTKTweetTokenizer(lang='english')
 
         # Set experience state
         xp.set_state(space)
@@ -103,63 +99,57 @@ if __name__ == "__main__":
         # Average sample
         average_sample = np.array([])
 
-        # For each sample
-        for n in range(args.n_samples):
-            # Set sample
-            xp.set_sample_state(n)
+        # Set sample
+        xp.set_sample_state(0)
 
-            # Naive bayes classifier
-            classifier = nsNLP.statistical_models.NaiveBayesClassifier(classes=author_list, smoothing=smoothing_type,
-                                                                       smoothing_param=smoothing_param)
+        # Naive bayes classifier
+        classifier = nsNLP.statistical_models.NaiveBayesClassifier(classes=['female', 'male'], smoothing=smoothing_type,
+                                                                   smoothing_param=smoothing_param)
 
-            # 10 fold cross validation
-            cross_validation = CrossValidation(authors)
+        # 10 fold cross validation
+        cross_validation = nsNLP.validation.CrossValidation(authors)
 
-            # Average
-            average_k_fold = np.array([])
+        # Average
+        average_k_fold = np.array([])
 
-            # For each fold
-            for k, (train_set, test_set) in enumerate(cross_validation):
-                # Set k
-                xp.set_fold_state(k)
+        # For each fold
+        for k, (train_set, test_set) in enumerate(cross_validation):
+            # Set k
+            xp.set_fold_state(k)
 
-                # Add to examples
-                for index, text in enumerate(train_set):
-                    # Add
-                    classifier.train(tokenizer(text.x()), text.y())
-                # end for
-
-                # Train
-                classifier.finalize(verbose=False)
-
-                # Counters
-                successes = 0.0
-
-                # Test the classifier
-                for text in test_set:
-                    # Predict
-                    prediction, probs = classifier.predict(tokenizer(text.x()))
-
-                    # Compare
-                    if prediction == text.y():
-                        successes += 1.0
-                    # end if
-                # end for
-
-                # Print success rate
-                xp.add_result(successes / float(len(test_set)))
-                average_k_fold = np.append(average_k_fold, [successes / float(len(test_set))])
-
-                # Reset classifier
-                classifier.reset()
+            # Add to author
+            for index, author in enumerate(train_set):
+                # Add
+                classifier.train(bow(tokenizer(author.get_texts()[0].x())), author.truth('gender'))
             # end for
 
-            # Add
-            average_sample = np.append(average_sample, [np.average(average_k_fold)])
+            # Train
+            classifier.finalize(verbose=False)
 
-            # Delete classifier
-            del classifier
+            # Counters
+            successes = 0.0
+
+            # Test the classifier
+            for author in test_set:
+                # Predict
+                prediction, probs = classifier.predict(bow(tokenizer(author.get_texts()[0].x())))
+
+                # Compare
+                if prediction == author.truth('gender'):
+                    successes += 1.0
+                # end if
+            # end for
+
+            # Print success rate
+            xp.add_result(successes / float(len(test_set)))
+            average_k_fold = np.append(average_k_fold, [successes / float(len(test_set))])
+
+            # Reset classifier
+            classifier.reset()
         # end for
+
+        # Add
+        average_sample = np.append(average_sample, [np.average(average_k_fold)])
     # end for
 
     # Save experiment results
