@@ -79,9 +79,8 @@ if __name__ == "__main__":
     # Bag of word features
     bow = nsNLP.features.BagOfWords()
 
-    # Lang params
-    params = dict()
-    params['en'] = (4800, 400)
+    # Features: letter statistics
+    bol = nsNLP.features.LetterStatistics()
 
     # Iterate
     for space in param_space:
