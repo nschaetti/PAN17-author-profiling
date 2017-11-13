@@ -33,7 +33,7 @@ import numpy as np
 if __name__ == "__main__":
 
     # Argument builder
-    args = nsNLP.tools.ArgumentBuilder(desc=u"Argument test")
+    args = nsNLP.tools.ArgumentBuilder(desc=u"Naive bayes classifier baseline benchmark")
 
     # Dataset arguments
     args.add_argument(command="--dataset", name="dataset", type=str,
@@ -64,7 +64,7 @@ if __name__ == "__main__":
 
     # Parameter space
     param_space = nsNLP.tools.ParameterSpace(args.get_space())
-    print(args.k)
+
     # Experiment
     xp = nsNLP.tools.ResultManager\
     (
@@ -85,7 +85,6 @@ if __name__ == "__main__":
 
     # Iterate
     for space in param_space:
-        print(space)
         # Params
         smoothing_type = space['smoothing_type'][0][0]
         smoothing_param = float(space['smoothing_param'])
