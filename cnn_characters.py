@@ -13,9 +13,7 @@ import math
 import cPickle as pickle
 import torch
 import codecs
-
-# Accepted characters
-alphabet = u" etaoinsrlhducmygpwfbk@v#!jx?z…q😂❤🏻😍😭🏼👍😊👏👌🙌😉🤔🙈🙄😘😩🏽🎉☺😁🔥💕😀😢🙏🎄🙃"
+from alphabet import cnn_alphabet
 
 
 ###########################
@@ -141,7 +139,7 @@ if __name__ == "__main__":
     bow = nsNLP.features.BagOfWords()
 
     # Features: bag of character tensor
-    boct = nsNLP.features.BagOfCharactersTensor(alphabet=alphabet, n_gram=args.n_grams)
+    boct = nsNLP.features.BagOfCharactersTensor(alphabet=cnn_alphabet, n_gram=args.n_grams)
 
     # Iterate
     for space in param_space:
