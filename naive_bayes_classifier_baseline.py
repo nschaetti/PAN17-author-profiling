@@ -141,14 +141,10 @@ if __name__ == "__main__":
 
             # Print success rate
             xp.add_result(successes / float(len(test_set)))
-            average_k_fold = np.append(average_k_fold, [successes / float(len(test_set))])
 
             # Reset classifier
             classifier.reset()
         # end for
-
-        # Add
-        average_sample = np.append(average_sample, [np.average(average_k_fold)])
     # end for
 
     # Save experiment results
