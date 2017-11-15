@@ -24,10 +24,9 @@
 
 import nsNLP
 import numpy as np
-from tools.ResultManager import ResultManager
 from tools.functions import create_tokenizer
 from corpus.CrossValidation import CrossValidation
-from corpus.Corpus import Corpus
+from alphabet import reservoir_alphabet
 
 ####################################################
 # Functions
@@ -240,7 +239,8 @@ if __name__ == "__main__":
                 w=w,
                 aggregation=aggregation,
                 state_gram=state_gram,
-                pca_path=args.pca_path
+                pca_path=args.pca_path,
+                alphabet=reservoir_alphabet
             )
 
             # 10 fold cross validation
