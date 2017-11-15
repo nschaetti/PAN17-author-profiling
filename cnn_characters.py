@@ -43,7 +43,7 @@ def create_cnn(n_grams, conv1_size, max_pool1_size, conv2_size, max_pool2_size, 
             n_classes=2,
             channels=(1, conv1_size, max_pool1_size, conv2_size, max_pool2_size, linear1_size, linear2_size),
             kernel_size=kernel_size,
-            stide=stride_size
+            stride=stride_size
         )
     elif n_grams == 3:
         convnet = nsNLP.deep_models.modules.ConvNet3D \
@@ -51,11 +51,26 @@ def create_cnn(n_grams, conv1_size, max_pool1_size, conv2_size, max_pool2_size, 
             n_classes=2,
             channels=(1, conv1_size, max_pool1_size, conv2_size, max_pool2_size, linear1_size, linear2_size),
             kernel_size=kernel_size,
-            stide=stride_size
+            stride=stride_size
         )
     # end if
     return convnet
 # end create_cnn
+
+
+# Label to int
+def label_to_int(label):
+    """
+    Label to tensor
+    :param label:
+    :return:
+    """
+    if label == 'female':
+        return 0.0
+    else:
+        return 1.0
+    # end if
+# end label_to_tensor
 
 ###########################
 # Main function
@@ -82,23 +97,23 @@ if __name__ == "__main__":
     args.add_argument(command="--epoch", name="epoch", type=int, help="Number of epoch", extended=False,
                       default=100)
     args.add_argument(command="--n-grams", name="n_grams", type=int, help="Gram model", extended=True,
-                      default=1)
+                      default="2")
     args.add_argument(command="--conv1", name="conv1", type=int, help="Number of channels in first layer",
-                      extended=True, default=10)
+                      extended=True, default="10")
     args.add_argument(command="--conv2", name="conv2", type=int, help="Number of channels in second layer",
-                      extended=True, default=20)
+                      extended=True, default="20")
     args.add_argument(command="--max-pool1", name="max_pool1", type=int, help="Size of the first max pooling layer",
-                      extended=True, default=2)
+                      extended=True, default="2")
     args.add_argument(command="--max-pool2", name="max_pool2", type=int, help="Size of the second max pooling layer",
-                      extended=True, default=2)
+                      extended=True, default="2")
     args.add_argument(command="--linear1", name="linear1", type=int, help="Size of the first linear layer",
-                      extended=True, default=4800)
+                      extended=True, default="4800")
     args.add_argument(command="--linear2", name="linear2", type=int, help="Size of the second linear layer",
-                      extended=True, default=50)
+                      extended=True, default="50")
     args.add_argument(command="--kernel-size", name="kernel_size", type=int, help="Kernel size",
-                      extended=True, default=5)
+                      extended=True, default="5")
     args.add_argument(command="--stride", name="stride", type=int, help="Stride",
-                      extended=True, default=1)
+                      extended=True, default="1")
 
     # Experiment output parameters
     args.add_argument(command="--name", name="name", type=str, help="Experiment's name", extended=False, required=True)
@@ -149,10 +164,10 @@ if __name__ == "__main__":
         n_grams = int(space['n_grams'])
         conv1_size = int(space['conv1'])
         conv2_size = int(space['conv2'])
-        max_pool1_size = int(space['max_pool1_size'])
-        max_pool2_size = int(space['max_pool2_size'])
-        linear1_size = int(space['linear1_size'])
-        linear2_size = int(space['linear2_size'])
+        max_pool1_size = int(space['max_pool1'])
+        max_pool2_size = int(space['max_pool2'])
+        linear1_size = int(space['linear1'])
+        linear2_size = int(space['linear2'])
         kernel_size = int(space['kernel_size'])
         stride_size = int(space['stride'])
 
@@ -198,7 +213,7 @@ if __name__ == "__main__":
                 text = author.get_texts()[0]
 
                 # Add to training set
-                torch_training_set.append((boct(text.x()), author.truth('gender')))
+                torch_training_set.append((boct(text.x()), label_to_int(author.truth('gender'))))
             # end for
 
             # For every author in the test set
@@ -207,13 +222,14 @@ if __name__ == "__main__":
                 text = author.get_texts()[0]
 
                 # Add to test set
-                torch_test_set.append((boct(text.x()), author.truth('gender')))
+                torch_test_set.append((boct(text.x()), label_to_int(author.truth('gender'))))
             # end for
 
             # Train with each document
             for epoch in range(1, args.epoch+1):
                 classifier.train(epoch, torch_training_set, batch_size=args.batch_size)
                 success_rate, test_loss = classifier.test(epoch, torch_test_set, batch_size=args.batch_size)
+                xp.write(u"Success rate: {}, test loss: {}".format(success_rate, test_loss), log_level=4)
                 average_k_fold[k, epoch] = success_rate
             # end for
 
