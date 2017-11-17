@@ -14,6 +14,7 @@ import cPickle as pickle
 import torch
 import codecs
 from alphabet import cnn_alphabet
+import matplotlib.pyplot as plt
 
 
 ###########################
@@ -66,9 +67,9 @@ def label_to_int(label):
     :return:
     """
     if label == 'female':
-        return 0.0
+        return 0
     else:
-        return 1.0
+        return 1
     # end if
 # end label_to_tensor
 
@@ -89,9 +90,10 @@ if __name__ == "__main__":
     # CNN arguments
     args.add_argument(command="--batch-size", name="batch_size", type=int, help="Input batch size", extended=False,
                       default=64)
-    args.add_argument(command="--lr", name="lr", type=float, help="Learning rate", required=True, extended=True)
-    args.add_argument(command="--momentum", name="momentum", type=float, help="SGD momentum", required=True,
-                      extended=True)
+    args.add_argument(command="--lr", name="lr", type=float, help="Learning rate", required=False, extended=True,
+                      default="0.01")
+    args.add_argument(command="--momentum", name="momentum", type=float, help="SGD momentum", required=False,
+                      extended=True, default="0.5")
     args.add_argument(command="--no-cuda", name="no_cuda", action='store_true',
                       help="Disables CUDA training", default=False, extended=False)
     args.add_argument(command="--epoch", name="epoch", type=int, help="Number of epoch", extended=False,
@@ -107,13 +109,17 @@ if __name__ == "__main__":
     args.add_argument(command="--max-pool2", name="max_pool2", type=int, help="Size of the second max pooling layer",
                       extended=True, default="2")
     args.add_argument(command="--linear1", name="linear1", type=int, help="Size of the first linear layer",
-                      extended=True, default="4800")
+                      extended=True, default="2880")
     args.add_argument(command="--linear2", name="linear2", type=int, help="Size of the second linear layer",
-                      extended=True, default="50")
+                      extended=True, default="400")
     args.add_argument(command="--kernel-size", name="kernel_size", type=int, help="Kernel size",
                       extended=True, default="5")
     args.add_argument(command="--stride", name="stride", type=int, help="Stride",
                       extended=True, default="1")
+    args.add_argument(command="--starting-grams", name="starting_grams", action='store_true',
+                      help="Include starting grams in the matrix?", default=False, extended=False)
+    args.add_argument(command="--ending-grams", name="ending_grams", action='store_true',
+                      help="Include ending grams in the matrix?", default=False, extended=False)
 
     # Experiment output parameters
     args.add_argument(command="--name", name="name", type=str, help="Experiment's name", extended=False, required=True)
@@ -154,7 +160,9 @@ if __name__ == "__main__":
     bow = nsNLP.features.BagOfWords()
 
     # Features: bag of character tensor
-    boct = nsNLP.features.BagOfCharactersTensor(alphabet=cnn_alphabet, n_gram=args.n_grams)
+    boct = nsNLP.features.BagOfCharactersTensor(alphabet=cnn_alphabet, n_gram=args.n_grams,
+                                                start_grams=args.starting_grams, end_grams=args.ending_grams,
+                                                tokenizer=nsNLP.tokenization.NLTKTokenizer())
 
     # Iterate
     for space in param_space:
@@ -183,11 +191,11 @@ if __name__ == "__main__":
         # 10 fold cross validation
         cross_validation = nsNLP.validation.CrossValidation(authors)
 
-        # Average
-        average_k_fold = np.zeros((args.k, args.epoch))
-
         # For each fold
         for k, (train_set, test_set) in enumerate(cross_validation):
+            # Fold state
+            xp.set_fold_state(k)
+
             # CNN
             convnet = create_cnn(args.n_grams, conv1_size, max_pool1_size, conv2_size, max_pool2_size, linear1_size,
                                  linear2_size, kernel_size, stride_size)
@@ -213,6 +221,15 @@ if __name__ == "__main__":
                 text = author.get_texts()[0]
 
                 # Add to training set
+                m = boct(text.x())
+                """for j in range(m.size()[1]):
+                    print(j)
+                    print(m[0, j, :])
+                #  end for
+                print(u"")
+                plt.imshow(m[0, :, :].numpy(), cmap='gray')
+                plt.show()
+                exit()"""
                 torch_training_set.append((boct(text.x()), label_to_int(author.truth('gender'))))
             # end for
 
@@ -226,24 +243,24 @@ if __name__ == "__main__":
             # end for
 
             # Train with each document
+            epoch_results = np.zeros(args.epoch)
             for epoch in range(1, args.epoch+1):
-                classifier.train(epoch, torch_training_set, batch_size=args.batch_size)
+                training_loss = classifier.train(epoch, torch_training_set, batch_size=args.batch_size)
                 success_rate, test_loss = classifier.test(epoch, torch_test_set, batch_size=args.batch_size)
-                xp.write(u"Success rate: {}, test loss: {}".format(success_rate, test_loss), log_level=4)
-                average_k_fold[k, epoch] = success_rate
+                xp.write\
+                (
+                    u"\t\t\t\t\tEpoch {}, Success rate: {}, training loss: {}, test loss: {}"
+                        .format(epoch, success_rate, training_loss, test_loss),
+                    log_level=5
+                )
+                epoch_results[epoch-1] = success_rate
             # end for
+
+            # Save top success rate
+            xp.add_result(np.max(epoch_results))
 
             # Delete classifier
             del classifier
-        # end for
-
-        # Get max average for each fold
-        best_epoch = np.argmax(np.average(average_k_fold, axis=0))
-
-        # Register each fold
-        for k in range(args.k):
-            xp.set_fold_state(k)
-            xp.add_result(average_k_fold[k, best_epoch])
         # end for
     # end for
 # end if
