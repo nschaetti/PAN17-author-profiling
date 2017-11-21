@@ -120,6 +120,8 @@ if __name__ == "__main__":
                       help="Include starting grams in the matrix?", default=False, extended=False)
     args.add_argument(command="--ending-grams", name="ending_grams", action='store_true',
                       help="Include ending grams in the matrix?", default=False, extended=False)
+    args.add_argument(command="--n-samples", name="n_samples", type=int, help="Number of samples to test",
+                      extended=False, default="10")
 
     # Experiment output parameters
     args.add_argument(command="--name", name="name", type=str, help="Experiment's name", extended=False, required=True)
@@ -185,82 +187,85 @@ if __name__ == "__main__":
         # Average sample
         average_sample = np.array([])
 
-        # Set sample
-        xp.set_sample_state(0)
+        # For each samples
+        for n in range(args.n_samples):
+            # Set sample
+            xp.set_sample_state(n)
 
-        # 10 fold cross validation
-        cross_validation = nsNLP.validation.CrossValidation(authors)
+            # 10 fold cross validation
+            cross_validation = nsNLP.validation.CrossValidation(authors)
 
-        # For each fold
-        for k, (train_set, test_set) in enumerate(cross_validation):
-            # Fold state
-            xp.set_fold_state(k)
+            # For each fold
+            for k, (train_set, test_set) in enumerate(cross_validation):
+                # Fold state
+                xp.set_fold_state(k)
 
-            # CNN
-            convnet = create_cnn(args.n_grams, conv1_size, max_pool1_size, conv2_size, max_pool2_size, linear1_size,
-                                 linear2_size, kernel_size, stride_size)
+                # CNN
+                convnet = create_cnn(args.n_grams, conv1_size, max_pool1_size, conv2_size, max_pool2_size, linear1_size,
+                                     linear2_size, kernel_size, stride_size)
 
-            # CNN Model
-            classifier = nsNLP.deep_models.CNNModel\
-            (
-                convnet,
-                classes=['female', 'male'],
-                cuda=use_cuda,
-                lr=lr,
-                momentum=momentum,
-                log_interval=10000
-            )
-
-            # Torch sets
-            torch_training_set = list()
-            torch_test_set = list()
-
-            # For every author in training example
-            for index, author in enumerate(train_set):
-                # Get author's text
-                text = author.get_texts()[0]
-
-                # Add to training set
-                m = boct(text.x())
-                """for j in range(m.size()[1]):
-                    print(j)
-                    print(m[0, j, :])
-                #  end for
-                print(u"")
-                plt.imshow(m[0, :, :].numpy(), cmap='gray')
-                plt.show()
-                exit()"""
-                torch_training_set.append((boct(text.x()), label_to_int(author.truth('gender'))))
-            # end for
-
-            # For every author in the test set
-            for index, author in enumerate(test_set):
-                # Get author's text
-                text = author.get_texts()[0]
-
-                # Add to test set
-                torch_test_set.append((boct(text.x()), label_to_int(author.truth('gender'))))
-            # end for
-
-            # Train with each document
-            epoch_results = np.zeros(args.epoch)
-            for epoch in range(1, args.epoch+1):
-                training_loss = classifier.train(epoch, torch_training_set, batch_size=args.batch_size)
-                success_rate, test_loss = classifier.test(epoch, torch_test_set, batch_size=args.batch_size)
-                xp.write\
+                # CNN Model
+                classifier = nsNLP.deep_models.CNNModel\
                 (
-                    u"\t\t\t\t\tEpoch {}, Success rate: {}, training loss: {}, test loss: {}"
-                        .format(epoch, success_rate, training_loss, test_loss),
-                    log_level=5
+                    convnet,
+                    classes=['female', 'male'],
+                    cuda=use_cuda,
+                    lr=lr,
+                    momentum=momentum,
+                    log_interval=10000
                 )
-                epoch_results[epoch-1] = success_rate
+
+                # Torch sets
+                torch_training_set = list()
+                torch_test_set = list()
+
+                # For every author in training example
+                for index, author in enumerate(train_set):
+                    # Get author's text
+                    text = author.get_texts()[0]
+
+                    # Add to training set
+                    m = boct(text.x())
+                    """for j in range(m.size()[1]):
+                        print(j)
+                        print(m[0, j, :])
+                    #  end for
+                    print(u"")
+                    plt.imshow(m[0, :, :].numpy(), cmap='gray')
+                    plt.show()
+                    exit()"""
+                    torch_training_set.append((boct(text.x()), label_to_int(author.truth('gender'))))
+                # end for
+
+                # For every author in the test set
+                for index, author in enumerate(test_set):
+                    # Get author's text
+                    text = author.get_texts()[0]
+
+                    # Add to test set
+                    torch_test_set.append((boct(text.x()), label_to_int(author.truth('gender'))))
+                # end for
+
+                # Train with each document
+                epoch_results = np.zeros(args.epoch)
+                for epoch in range(1, args.epoch+1):
+                    training_loss = classifier.train(epoch, torch_training_set, batch_size=args.batch_size)
+                    success_rate, test_loss = classifier.test(epoch, torch_test_set, batch_size=args.batch_size)
+                    xp.write\
+                    (
+                        u"\t\t\t\t\tEpoch {}, Success rate: {}, training loss: {}, test loss: {}"
+                            .format(epoch, success_rate, training_loss, test_loss),
+                        log_level=5
+                    )
+                    epoch_results[epoch-1] = success_rate
+                # end for
+
+                # Save top success rate
+                xp.add_result(np.max(epoch_results))
+
+                # Delete classifier
+                del classifier
             # end for
-
-            # Save top success rate
-            xp.add_result(np.max(epoch_results))
-
-            # Delete classifier
-            del classifier
         # end for
     # end for
 # end if
