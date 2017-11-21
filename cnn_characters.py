@@ -150,7 +150,7 @@ if __name__ == "__main__":
         args.name,
         args.description,
         args.get_space(),
-        1,
+        args.n_samples,
         args.k,
         verbose=args.verbose
     )
