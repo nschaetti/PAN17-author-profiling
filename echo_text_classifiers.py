@@ -104,7 +104,7 @@ def get_changed_params(new_space, last_space):
 if __name__ == "__main__":
 
     # Argument builder
-    args = nsNLP.tools.ArgumentBuilder(desc=u"Argument test")
+    args = nsNLP.tools.ArgumentBuilder(desc=u"PAN17 Author profiling")
 
     # Dataset arguments
     args.add_argument(command="--dataset", name="dataset", type=str,
@@ -200,7 +200,7 @@ if __name__ == "__main__":
                 converter_in(converter_desc, "tag"):
             tokenizer = create_tokenizer("spacy_wv")
         else:
-            tokenizer = create_tokenizer("nltk")
+            tokenizer = create_tokenizer("nltk-twitter")
         # end if
 
         # Set experience state
