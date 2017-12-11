@@ -13,7 +13,7 @@ import math
 import cPickle as pickle
 import torch
 import codecs
-from alphabet import cnn_alphabet
+import alphabet
 import matplotlib.pyplot as plt
 
 
@@ -162,7 +162,7 @@ if __name__ == "__main__":
     bow = nsNLP.features.BagOfWords()
 
     # Features: bag of character tensor
-    boct = nsNLP.features.BagOfCharactersTensor(alphabet=cnn_alphabet, n_gram=args.n_grams,
+    boct = nsNLP.features.BagOfCharactersTensor(alphabet=alphabet.cnn_alphabet_english_punc_smilies, n_gram=args.n_grams,
                                                 start_grams=args.starting_grams, end_grams=args.ending_grams,
                                                 tokenizer=nsNLP.tokenization.NLTKTokenizer())
 
