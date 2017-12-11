@@ -27,8 +27,8 @@ class CrossValidation(object):
         self._authors = authors
         self._k = k
         self._pos = 0
-        self._n_texts = len(authors[0].get_texts())
-        self._fold_size = int(math.floor(float(self._n_texts) / float(k)))
+        self._n_authors = len(authors)
+        self._fold_size = int(math.floor(float(self._n_authors) / float(k)))
     # end __init__
 
     #################################################
@@ -54,44 +54,13 @@ class CrossValidation(object):
             raise StopIteration
         # end if
 
-        # Sets
-        train_set = list()
-        test_set = list()
-
-        # Total text indexes
-        total_text_ids = range(self._n_texts)
-
         # Test indexes
-        test_text_ids = total_text_ids[self._pos*self._fold_size:self._pos*self._fold_size+self._fold_size]
+        test_set = self._authors[self._pos*self._fold_size:self._pos*self._fold_size+self._fold_size]
 
         # Remove test indexes
-        train_text_ids = total_text_ids
-        for idx in test_text_ids:
-            train_text_ids.remove(idx)
-        # end for
-
-        # Get train set
-        # Each authors
-        for author in self._authors:
-            # Texts
-            author_texts = author.get_texts()
-
-            # Each indexes
-            for idx in train_text_ids:
-                train_set.append(author_texts[idx])
-            # end for
-        # end for
-
-        # Get test set
-        # Each authors
-        for author in self._authors:
-            # Texts
-            author_texts = author.get_texts()
-
-            # Each indexes
-            for idx in test_text_ids:
-                test_set.append(author_texts[idx])
-            # end for
+        train_set = self._authors
+        for a in test_set:
+            train_set.remove(a)
         # end for
 
         # Next fold
