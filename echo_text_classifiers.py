@@ -104,7 +104,7 @@ def get_changed_params(new_space, last_space):
 if __name__ == "__main__":
 
     # Argument builder
-    args = nsNLP.tools.ArgumentBuilder(desc=u"Argument test")
+    args = nsNLP.tools.ArgumentBuilder(desc=u"PAN17 Author profiling")
 
     # Dataset arguments
     args.add_argument(command="--dataset", name="dataset", type=str,
