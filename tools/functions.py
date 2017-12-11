@@ -17,6 +17,8 @@ def create_tokenizer(tokenizer_type):
     # Tokenizer
     if tokenizer_type == "nltk":
         tokenizer = nsNLP.tokenization.NLTKTokenizer()
+    elif tokenizer_type == "nltk-twitter":
+        tokenizer = nsNLP.tokenization.NLTKTweetTokenizer()
     elif tokenizer_type == "spacy":
         tokenizer = nsNLP.tokenization.SpacyTokenizer()
     elif tokenizer_type == "spacy_wv":
