@@ -200,7 +200,7 @@ if __name__ == "__main__":
                 converter_in(converter_desc, "tag"):
             tokenizer = create_tokenizer("spacy_wv")
         else:
-            tokenizer = create_tokenizer("nltk")
+            tokenizer = create_tokenizer("nltk-twitter")
         # end if
 
         # Set experience state
