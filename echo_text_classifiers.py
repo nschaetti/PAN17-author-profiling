@@ -277,7 +277,15 @@ if __name__ == "__main__":
                 for author in test_set:
                     # Predict
                     if converter_desc != 'ch':
-                        prediction, probs = classifier.predict(tokenizer(author.get_texts()[0].x()))
+                        # Tokens
+                        tokens = tokenizer(author.get_texts()[0].x())
+
+                        # Check length
+                        if classifier.converter(tokens).shape[0] > 0:
+                            prediction, probs = classifier.predict(tokens)
+                        else:
+                            prediction, probs = 'female', (1.0, 0.0)
+                        # end if
                     else:
                         prediction, probs = classifier.predict(author.get_texts()[0].x())
                     # end if
