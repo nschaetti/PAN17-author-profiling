@@ -134,6 +134,8 @@ if __name__ == "__main__":
                       default="average")
     args.add_argument(command="--state-gram", name="state_gram", type=str, help="State-gram value",
                       extended=True, default="1")
+    args.add_argument(command="--voc-size", name="voc_size", type=int, help="Vocabulary size for One-Hot",
+                      extended=False, default=30000)
 
     # Tokenizer and word vector parameters
     args.add_argument(command="--lang", name="lang", type=str, help="Tokenizer language parameters", default='en',
@@ -240,7 +242,8 @@ if __name__ == "__main__":
                 aggregation=aggregation,
                 state_gram=state_gram,
                 pca_path=args.pca_path,
-                alphabet=reservoir_alphabet
+                alphabet=reservoir_alphabet,
+                voc_size=args.voc_size
             )
 
             # 10 fold cross validation
