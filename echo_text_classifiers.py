@@ -26,7 +26,7 @@ import nsNLP
 import numpy as np
 from tools.functions import create_tokenizer
 from corpus.CrossValidation import CrossValidation
-from alphabet import reservoir_alphabet
+from alphabet import reservoir_alphabet, reservoir_alphabet_small
 
 ####################################################
 # Functions
@@ -242,7 +242,7 @@ if __name__ == "__main__":
                 aggregation=aggregation,
                 state_gram=state_gram,
                 pca_path=args.pca_path,
-                alphabet=reservoir_alphabet,
+                alphabet=reservoir_alphabet_small,
                 voc_size=args.voc_size
             )
 
@@ -281,7 +281,8 @@ if __name__ == "__main__":
                         tokens = tokenizer(author.get_texts()[0].x())
 
                         # Check length
-                        if classifier.converter(tokens).shape[0] > 0:
+                        converter = classifier.converter
+                        if converter(tokens).shape[0] > 0:
                             prediction, probs = classifier.predict(tokens)
                         else:
                             prediction, probs = 'female', (1.0, 0.0)
