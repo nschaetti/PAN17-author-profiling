@@ -29,6 +29,7 @@ class CrossValidation(object):
         self._pos = 0
         self._n_authors = len(authors)
         self._fold_size = int(math.floor(float(self._n_authors) / float(k)))
+        print(self._fold_size)
     # end __init__
 
     #################################################
@@ -58,9 +59,11 @@ class CrossValidation(object):
         test_set = self._authors[self._pos*self._fold_size:self._pos*self._fold_size+self._fold_size]
 
         # Remove test indexes
-        train_set = self._authors
-        for a in test_set:
-            train_set.remove(a)
+        train_set = list()
+        for a in self._authors:
+            if a not in test_set:
+                train_set.append(a)
+            # end if
         # end for
 
         # Next fold
