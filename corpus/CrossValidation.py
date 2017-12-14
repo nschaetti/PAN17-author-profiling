@@ -29,7 +29,6 @@ class CrossValidation(object):
         self._pos = 0
         self._n_authors = len(authors)
         self._fold_size = int(math.floor(float(self._n_authors) / float(k)))
-        print(self._fold_size)
     # end __init__
 
     #################################################
