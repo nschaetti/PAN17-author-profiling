@@ -138,7 +138,7 @@ if __name__ == "__main__":
                       extended=False, default=30000)
 
     # Tokenizer and word vector parameters
-    args.add_argument(command="--lang", name="lang", type=str, help="Tokenizer language parameters", default='en',
+    args.add_argument(command="--lang", name="lang", type=str, help="Tokenizer language parameters", default='en_core_web_lg',
                       extended=False)
 
     # Experiment output parameters
@@ -200,9 +200,9 @@ if __name__ == "__main__":
         if converter_in(converter_desc, "wv") or \
                 converter_in(converter_desc, "pos") or \
                 converter_in(converter_desc, "tag"):
-            tokenizer = create_tokenizer("spacy_wv")
+            tokenizer = create_tokenizer("spacy_wv", lang=args.lang)
         else:
-            tokenizer = create_tokenizer("nltk-twitter")
+            tokenizer = create_tokenizer("nltk-twitter", lang=args.lang)
         # end if
 
         # Set experience state
