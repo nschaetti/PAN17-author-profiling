@@ -243,7 +243,8 @@ if __name__ == "__main__":
                 state_gram=state_gram,
                 pca_path=args.pca_path,
                 alphabet=reservoir_alphabet_small,
-                voc_size=args.voc_size
+                voc_size=args.voc_size,
+                fill_in=True
             )
 
             # 10 fold cross validation
