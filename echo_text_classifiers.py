@@ -219,7 +219,7 @@ if __name__ == "__main__":
             # Generate a new W if necessary
             if change_w(changed_params) or not args.keep_w:
                 xp.write(u"\t\tGenerating new W matrix", log_level=2)
-                w = nsNLP.esn_models.ESNTextClassifier.w(rc_size=reservoir_size, rc_w_sparsity=w_sparsity)
+                w = nsNLP.esn_models.ESNTextClassifier.generate_w(rc_size=reservoir_size, rc_w_sparsity=w_sparsity)
                 xp.save_object(u"w_{}".format(w_index), w, info=u"{}".format(space))
             # end if
 
