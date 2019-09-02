@@ -29,6 +29,7 @@ import string
 import codecs
 import re
 import argparse
+import numpy as np
 
 ####################################################
 # Functions
@@ -77,23 +78,24 @@ def parse_truth_file(truth_file):
 
 # Argument builder
 parser = argparse.ArgumentParser()
-
-# Dataset arguments
-parser.add_argument(command="--dataset", name="dataset", type=str,
-                  help="JSON file with the file description for each authors", required=True, extended=False)
-parser.add_argument(command="--k", name="k", type=int, help="K-Fold Cross Validation", extended=False, default=10)
-parser.add_argument(command="--output", name="output", type=str, help="Experiment's output directory", required=True,
-                  extended=False)
+parser.add_argument("--dataset", type=str, help="JSON file with the file description for each authors")
+parser.add_argument("--k", type=int, help="K-Fold Cross Validation", default=10)
+parser.add_argument("--output", type=str, help="Experiment's output directory")
+parser.add_argument("--length", type=int, default=3072)
 args = parser.parse_args()
 
 # Parse truth
-truth = parse_truth_file(os.path.join(args.dataset, "truth.txt"))
+truth = parse_truth_file(os.path.join(args.dataset, "en.txt"))
 
 # Create directories for each fold
 for k in range(args.k):
     # Fold directory
     fold_directory = os.path.join(args.output, "{}".format(k))
-    os.mkdir(fold_directory)
+
+    # Fold directory
+    if not os.path.exists(fold_directory):
+        os.mkdir(fold_directory)
+    # end if
 
     # For train, test and val
     for d_name in ["train", "test", "val"]:
@@ -104,51 +106,59 @@ for k in range(args.k):
         male_directory = os.path.join(dataset_directory, "male")
         female_directory = os.path.join(dataset_directory, "female")
 
-        # Create directories
-        os.mkdir(dataset_directory)
-        os.mkdir(male_directory)
-        os.mkdir(female_directory)
+        # Create dataset directory
+        if not os.path.exists(dataset_directory):
+            os.mkdir(dataset_directory)
+        # end if
+
+        # Create male directory
+        if not os.path.exists(male_directory):
+            os.mkdir(male_directory)
+        # end if
+
+        # Create female directory
+        if not os.path.exists(female_directory):
+            os.mkdir(female_directory)
+        # end if
     # end for
 
     # Dataset IDs
-    dataset_ids = range(3600)
-    test_ids = range(k * 360, k * 360 + 180)
-    val_ids = range(k * 360 + 180, k * 360 + 360)
-    train_ids = dataset_directory - (test_ids + val_ids)
+    dataset_ids = np.arange(3600)
+    test_ids = np.arange(k * 360, k * 360 + 180)
+    val_ids = np.arange(k * 360 + 180, k * 360 + 360)
+    train_ids = np.delete(dataset_ids, np.append(test_ids, val_ids))
+
+    # File index
+    file_index = 0
 
     # For each file in the dataset directory
     for i, file in enumerate(os.listdir(args.dataset)):
         if file[-4:] == ".xml":
-            # Target directory
-            if i in train_ids:
-                target_directory = os.path.join(fold_directory, "train")
-            elif test_ids:
-                target_directory = os.path.join(fold_directory, "test")
-            else:
-                target_directory = os.path.join(fold_directory, "val")
-            # end if
-
             # Parse the file
             tree = etree.parse(os.path.join(args.dataset, file))
 
             # Author's name
             author_name = file[:-4]
 
-            # Author's gender
-            author_gender = truth[author_name]['gender']
+            # English author
+            if author_name in truth.keys():
+                # Target directory
+                if file_index in train_ids:
+                    target_directory = os.path.join(fold_directory, "train")
+                elif file_index in test_ids:
+                    target_directory = os.path.join(fold_directory, "test")
+                else:
+                    target_directory = os.path.join(fold_directory, "val")
+                # end if
 
-            # Random name
-            random_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
+                # Author's gender
+                author_gender = truth[author_name]['gender']
 
-            # Destination
-            destination_path = os.path.join(target_directory, author_gender, random_name + ".txt")
+                # Destination
+                destination_path = os.path.join(target_directory, author_gender)
 
-            # Log
-            print("Writing file {}".format(destination_path))
-
-            # Write the file
-            with codecs.open(destination_path, 'w', encoding='utf-8') as f:
-                # For each document
+                # Get complete text
+                author_text = ""
                 for document in tree.xpath("/author/documents/document"):
                     # Get text
                     document_text = document.text
@@ -159,13 +169,31 @@ for k in range(args.k):
 
                     # Remove all URLs
                     for url in urls:
-                        document_text = document_text.replace(url, u"")
+                        document_text = document_text.replace(url, "")
                     # end for
 
                     # Write the document
-                    f.write(document_text.replace(u'\n', u' ') + u"\n")
+                    author_text += document_text.replace('\n', ' ') + "\n"
                 # end for
-            # end with
+
+                # Part index
+                part_index = 0
+
+                # For each part
+                for pos in range(0, len(author_text), args.length):
+                    # Log
+                    print("Writing file {}".format(os.path.join(destination_path, "{}.txt".format(file_index))))
+
+                    # Write the file
+                    codecs.open(os.path.join(destination_path, "{}-{}.txt".format(file_index, part_index)), 'w', encoding='utf-8').write(author_text[pos:pos+args.length])
+
+                    # Next part index
+                    part_index += 1
+                # end for
+
+                # Next file index
+                file_index += 1
+            # end if
         # end if
     # end for
 # end for
