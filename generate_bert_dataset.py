@@ -76,15 +76,15 @@ def parse_truth_file(truth_file):
 
 
 # Argument builder
-args = argparse.ArgumentParser()
+parser = argparse.ArgumentParser()
 
 # Dataset arguments
-args.add_argument(command="--dataset", name="dataset", type=str,
+parser.add_argument(command="--dataset", name="dataset", type=str,
                   help="JSON file with the file description for each authors", required=True, extended=False)
-args.add_argument(command="--k", name="k", type=int, help="K-Fold Cross Validation", extended=False, default=10)
-args.add_argument(command="--output", name="output", type=str, help="Experiment's output directory", required=True,
+parser.add_argument(command="--k", name="k", type=int, help="K-Fold Cross Validation", extended=False, default=10)
+parser.add_argument(command="--output", name="output", type=str, help="Experiment's output directory", required=True,
                   extended=False)
-args.parse_args()
+args = parser.parse_args()
 
 # Parse truth
 truth = parse_truth_file(os.path.join(args.dataset, "truth.txt"))
