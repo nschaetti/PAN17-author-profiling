@@ -136,6 +136,7 @@ if __name__ == "__main__":
 
     # Cuda
     use_cuda = not args.no_cuda and torch.cuda.is_available()
+    print(use_cuda)
 
     # Corpus
     pan17corpus = nsNLP.data.Corpus(args.dataset)
@@ -162,7 +163,7 @@ if __name__ == "__main__":
     bow = nsNLP.features.BagOfWords()
 
     # Features: bag of character tensor
-    boct = nsNLP.features.BagOfCharactersTensor(alphabet=alphabet.cnn_alphabet_english_punc, n_gram=args.n_grams,
+    boct = nsNLP.features.BagOfCharactersTensor(alphabet=alphabet.cnn_alphabet_english, n_gram=args.n_grams,
                                                 start_grams=args.starting_grams, end_grams=args.ending_grams,
                                                 tokenizer=nsNLP.tokenization.NLTKTokenizer())
 
