@@ -14,6 +14,7 @@ classes = ['male', 'female']
 parser = argparse.ArgumentParser()
 parser.add_argument("--datadir")
 parser.add_argument("--k", default=10)
+parser.add_argument("--length", type=int, default=3072)
 args = parser.parse_args()
 
 # Average accuracy
@@ -63,27 +64,37 @@ for k in range(args.k):
         # Class directory
         class_val_dir = os.path.join(fold_val_dir, c)
 
-        # Data
-        data = list()
-
         # For each file
         for class_file in os.listdir(class_val_dir):
             # Read file
-            data.append(codecs.open(os.path.join(class_val_dir, class_file), "r", encoding="utf-8").read())
-        # end for
+            document_text = codecs.open(os.path.join(class_val_dir, class_file), "r", encoding="utf-8").read()
 
-        # Predict class
-        pred = predictor.predict(data)
+            # Data list
+            data = list()
 
-        # For each prediction
-        for p in pred:
-            if p == c:
+            # For each part
+            for pos in range(0, len(document_text), args.length):
+                data.append(document_text[pos:pos+args.length])
+            # end for
+
+            # Predict class
+            pred = np.average(predictor.predict(data, return_proba=True), axis=1)
+
+            # Predicted class
+            if pred[0] >= pred[1]:
+                predicted_class = 'male'
+            else:
+                predicted_class = 'female'
+            # end if
+
+            # Accuracy
+            if predicted_class == c:
                 count += 1
             # end if
-        # end for
 
-        # Total
-        total += len(pred)
+            # Total
+            total += 1
+        # end for
     # end for
 
     # Accuracy
