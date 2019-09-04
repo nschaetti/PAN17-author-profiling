@@ -163,7 +163,7 @@ for space in param_space:
             # end if
 
             # Training generator
-            training_generator = G.ReutersC50BatchGenerator(
+            training_generator = G.PAN17BatchGenerator(
                 data_inputs=train_inputs,
                 data_labels=train_time_labels,
                 batch_size=args.batch_size,
@@ -174,7 +174,7 @@ for space in param_space:
             )
 
             # Validation generator
-            validation_generator = G.ReutersC50BatchGenerator(
+            validation_generator = G.PAN17BatchGenerator(
                 data_inputs=dev_inputs,
                 data_labels=dev_time_labels,
                 batch_size=args.batch_size,
@@ -185,7 +185,7 @@ for space in param_space:
             )
 
             # Test generator
-            test_generator = G.ReutersC50BatchGenerator(
+            test_generator = G.PAN17BatchGenerator(
                 data_inputs=test_inputs,
                 data_labels=test_time_labels,
                 batch_size=args.batch_size,
