@@ -24,6 +24,9 @@
 
 import nsNLP
 import numpy as np
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from sklearn.pipeline import Pipeline
+from sklearn import svm
 
 ####################################################
 # Main function
@@ -33,7 +36,7 @@ import numpy as np
 if __name__ == "__main__":
 
     # Argument builder
-    args = nsNLP.tools.ArgumentBuilder(desc=u"Naive bayes classifier baseline benchmark")
+    args = nsNLP.tools.ArgumentBuilder(desc="Sklearn classifier baseline benchmark")
 
     # Dataset arguments
     args.add_argument(command="--dataset", name="dataset", type=str,
@@ -41,10 +44,18 @@ if __name__ == "__main__":
     args.add_argument(command="--k", name="k", type=int, help="K-Fold Cross Validation", extended=False, default=10)
 
     # Naive Bayes classifier arguments
-    args.add_argument(command="--smoothing-type", name="smoothing_type", type=float, help="Smoothing type",
-                      required=True, extended=True)
-    args.add_argument(command="--smoothing-param", name="smoothing_param", type=float, help="Smoothing parameter",
-                      required=True, extended=True)
+    args.add_argument(command="--n-grams-min", name="n_grams_min", type=int, help="N-grams", required=True,
+                      extended=True)
+    args.add_argument(command="--n-grams-max", name="n_grams_max", type=int, help="N-grams", required=True,
+                      extended=True)
+    args.add_argument(command="--kernel", name="kernel", type=str, help="linear,poly,rbf", required=True,
+                      extended=True)
+    args.add_argument(command="--kernel-degree", name="kernel_degree", type=int, help="Kernel degree", default=3,
+                      required=False, extended=True)
+    args.add_argument(command="--penalty", name="penalty", type=float, help="L2 penalty", default=1.0,
+                      required=False, extended=True)
+    args.add_argument(command="--tfidf", name="tfidf", type=str, help="tfidf or none", default=False, required=False,
+                      extended=True)
 
     # Experiment output parameters
     args.add_argument(command="--name", name="name", type=str, help="Experiment's name", extended=False, required=True)
@@ -86,11 +97,12 @@ if __name__ == "__main__":
     # Iterate
     for space in param_space:
         # Params
-        smoothing_type = space['smoothing_type'][0][0]
-        smoothing_param = float(space['smoothing_param'])
-
-        # Choose the right tokenizer
-        tokenizer = nsNLP.tokenization.NLTKTweetTokenizer(lang='english')
+        ngrams_min = int(space['n_grams_min'])
+        ngrams_max = int(space['n_grams_max'])
+        kernel = space['kernel'][0][0]
+        penalty = float(space['penalty'])
+        kernel_degree = int(space['kernel_degree'])
+        tfidf = space['tfidf'][0][0]
 
         # Set experience state
         xp.set_state(space)
@@ -100,13 +112,6 @@ if __name__ == "__main__":
 
         # Set sample
         xp.set_sample_state(0)
-
-        # Naive bayes classifier
-        classifier = nsNLP.statistical_models.NaiveBayesClassifier(
-            classes=['female', 'male'],
-            smoothing=smoothing_type,
-            smoothing_param=smoothing_param
-        )
 
         # 10 fold cross validation
         cross_validation = nsNLP.validation.CrossValidation(authors)
@@ -119,22 +124,36 @@ if __name__ == "__main__":
             # Set k
             xp.set_fold_state(k)
 
+            # Classifier
+            classifier = svm.SVC(kernel=kernel, C=penalty, degree=kernel_degree)
+
+            # Pipeline
+            text_clf = Pipeline([
+                ('vect', CountVectorizer(ngram_range=(ngrams_min, ngrams_max))),
+                ('tfidf', TfidfTransformer(use_idf=True if tfidf == 'tfidf' else False)),
+                ('clf', classifier)
+            ])
+
+            # Total text for each gender
+            profile_X = list()
+            profile_Y = list()
+
             # Add to author
             for index, author in enumerate(train_set):
-                # Add
-                classifier.train(bow(tokenizer(author.get_texts()[0].x())), author.truth('gender'))
+                profile_X.append(author.get_texts()[0].x())
+                profile_Y.append(author.truth('gender'))
             # end for
 
-            # Train
-            classifier.finalize(verbose=False)
+            # Fit
+            text_clf.fit(profile_X, profile_Y)
 
             # Counters
             successes = 0.0
 
             # Test the classifier
             for author in test_set:
-                # Predict
-                prediction, probs = classifier.predict(bow(tokenizer(author.get_texts()[0].x())))
+                # Prediction
+                prediction = text_clf.predict([author.get_texts()[0].x()])
 
                 # Compare
                 if prediction == author.truth('gender'):
@@ -144,9 +163,6 @@ if __name__ == "__main__":
 
             # Print success rate
             xp.add_result(successes / float(len(test_set)))
-
-            # Reset classifier
-            classifier.reset()
         # end for
     # end for
 
