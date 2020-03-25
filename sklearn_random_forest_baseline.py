@@ -26,7 +26,7 @@ import nsNLP
 import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.pipeline import Pipeline
-from sklearn import svm
+from sklearn.ensemble import RandomForestClassifier
 
 ####################################################
 # Main function
@@ -48,15 +48,16 @@ if __name__ == "__main__":
                       extended=True)
     args.add_argument(command="--n-grams-max", name="n_grams_max", type=int, help="N-grams", required=True,
                       extended=True)
-    args.add_argument(command="--kernel", name="kernel", type=str, help="linear,poly,rbf", required=True,
+    args.add_argument(command="--criterion", name="criterion", type=str, help="gini,entropy", required=True,
                       extended=True)
-    args.add_argument(command="--kernel-degree", name="kernel_degree", type=int, help="Kernel degree", default=3,
+    args.add_argument(command="--n-estimators", name="n_estimators", type=int, help="How many trees", default=100,
                       required=False, extended=True)
-    args.add_argument(command="--penalty", name="penalty", type=float, help="L2 penalty", default=1.0,
+    args.add_argument(command="--max-depth", name="max_depth", type=int, help="Max depth", default=None,
                       required=False, extended=True)
     args.add_argument(command="--tfidf", name="tfidf", type=str, help="tfidf or none", default=False, required=False,
                       extended=True)
-    args.add_argument(command="--feature", name="feature", type=str, help="word,char,char_wb", default='word', required=False,
+    args.add_argument(command="--feature", name="feature", type=str, help="word,char,char_wb", default='word',
+                      required=False,
                       extended=True)
 
     # Experiment output parameters
@@ -101,9 +102,13 @@ if __name__ == "__main__":
         # Params
         ngrams_min = int(space['n_grams_min'])
         ngrams_max = int(space['n_grams_max'])
-        kernel = space['kernel'][0][0]
-        penalty = float(space['penalty'])
-        kernel_degree = int(space['kernel_degree'])
+        criterion = space['criterion'][0][0]
+        if space['max_depth'] == [['None']]:
+            max_depth = None
+        else:
+            max_depth = int(space['max_depth'])
+        # end if
+        n_estimators = int(space['n_estimators'])
         tfidf = space['tfidf'][0][0]
         feature = space['feature'][0][0]
 
@@ -128,7 +133,11 @@ if __name__ == "__main__":
             xp.set_fold_state(k)
 
             # Classifier
-            classifier = svm.SVC(kernel=kernel, C=penalty, degree=kernel_degree)
+            classifier = RandomForestClassifier(
+                n_estimators=n_estimators,
+                criterion=criterion,
+                max_depth=max_depth
+            )
 
             # Pipeline
             text_clf = Pipeline([
