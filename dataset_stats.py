@@ -43,22 +43,6 @@ if __name__ == "__main__":
                       help="JSON file with the file description for each authors", required=True, extended=False)
     args.add_argument(command="--k", name="k", type=int, help="K-Fold Cross Validation", extended=False, default=10)
 
-    # Naive Bayes classifier arguments
-    args.add_argument(command="--n-grams-min", name="n_grams_min", type=int, help="N-grams", required=True,
-                      extended=True)
-    args.add_argument(command="--n-grams-max", name="n_grams_max", type=int, help="N-grams", required=True,
-                      extended=True)
-    args.add_argument(command="--kernel", name="kernel", type=str, help="linear,poly,rbf", required=True,
-                      extended=True)
-    args.add_argument(command="--degree", name="degree", type=int, help="Kernel degree", default=3,
-                      required=False, extended=True)
-    args.add_argument(command="--penalty", name="penalty", type=float, help="L2 penalty", default=1.0,
-                      required=False, extended=True)
-    args.add_argument(command="--tfidf", name="tfidf", type=str, help="tfidf or none", default=False, required=False,
-                      extended=True)
-    args.add_argument(command="--feature", name="feature", type=str, help="word,char,char_wb", default='word', required=False,
-                      extended=True)
-
     # Experiment output parameters
     args.add_argument(command="--name", name="name", type=str, help="Experiment's name", extended=False, required=True)
     args.add_argument(command="--description", name="description", type=str, help="Experiment's description",
@@ -98,15 +82,6 @@ if __name__ == "__main__":
 
     # Iterate
     for space in param_space:
-        # Params
-        ngrams_min = int(space['n_grams_min'])
-        ngrams_max = int(space['n_grams_max'])
-        kernel = space['kernel'][0][0]
-        penalty = float(space['penalty'])
-        degree = int(space['degree'])
-        tfidf = space['tfidf'][0][0]
-        feature = space['feature'][0][0]
-
         # Set experience state
         xp.set_state(space)
 
@@ -127,45 +102,17 @@ if __name__ == "__main__":
             # Set k
             xp.set_fold_state(k)
 
-            # Classifier
-            classifier = svm.SVC(kernel=kernel, C=penalty, degree=degree)
-
-            # Pipeline
-            text_clf = Pipeline([
-                ('vect', CountVectorizer(ngram_range=(ngrams_min, ngrams_max), analyzer=feature)),
-                ('tfidf', TfidfTransformer(use_idf=True if tfidf == 'tfidf' else False)),
-                ('clf', classifier)
-            ])
-
-            # Total text for each gender
-            profile_X = list()
-            profile_Y = list()
-
             # Add to author
             for index, author in enumerate(train_set):
-                profile_X.append(author.get_texts()[0].x())
-                profile_Y.append(author.truth('gender'))
+                author.get_texts()[0].x()
+                author.truth('gender')
             # end for
-
-            # Fit
-            text_clf.fit(profile_X, profile_Y)
-
-            # Counters
-            successes = 0.0
 
             # Test the classifier
             for author in test_set:
                 # Prediction
-                prediction = text_clf.predict([author.get_texts()[0].x()])
-
-                # Compare
-                if prediction == author.truth('gender'):
-                    successes += 1.0
-                # end if
+                author.get_texts()[0].x()
             # end for
-
-            # Print success rate
-            xp.add_result(successes / float(len(test_set)))
         # end for
     # end for
 
