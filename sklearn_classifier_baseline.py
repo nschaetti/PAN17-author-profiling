@@ -25,7 +25,7 @@
 import nsNLP
 import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
-from sklearn.pipeline import Pipeline
+from sklearn.pipeline import Pipeline, FeatureUnion
 from sklearn import svm
 
 ####################################################
@@ -131,11 +131,29 @@ if __name__ == "__main__":
             classifier = svm.SVC(kernel=kernel, C=penalty, degree=degree)
 
             # Pipeline
-            text_clf = Pipeline([
-                ('vect', CountVectorizer(ngram_range=(ngrams_min, ngrams_max), analyzer=feature)),
-                ('tfidf', TfidfTransformer(use_idf=True if tfidf == 'tfidf' else False)),
-                ('clf', classifier)
-            ])
+            if feature == "comb":
+                text_clf = Pipeline([
+                    ('comb', FeatureUnion(
+                        [
+                            ('word', Pipeline([
+                                ('word_vect', CountVectorizer(ngram_range=(ngrams_min, ngrams_max), analyzer='word')),
+                                ('word_tfidf', TfidfTransformer(use_idf=True if tfidf == 'tfidf' else False))
+                            ])),
+                            ('char', Pipeline([
+                                ('char_vect', CountVectorizer(ngram_range=(ngrams_min, ngrams_max), analyzer='char')),
+                                ('char_tfidf', TfidfTransformer(use_idf=True if tfidf == 'tfidf' else False)),
+                            ]))
+                        ]
+                    )),
+                    ('clf', classifier)
+                ])
+            else:
+                text_clf = Pipeline([
+                    ('vect', CountVectorizer(ngram_range=(ngrams_min, ngrams_max), analyzer=feature)),
+                    ('tfidf', TfidfTransformer(use_idf=True if tfidf == 'tfidf' else False)),
+                    ('clf', classifier)
+                ])
+            # end if
 
             # Total text for each gender
             profile_X = list()
