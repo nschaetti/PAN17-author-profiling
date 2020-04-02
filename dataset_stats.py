@@ -24,9 +24,7 @@
 
 import nsNLP
 import numpy as np
-from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
-from sklearn.pipeline import Pipeline
-from sklearn import svm
+from nltk.tokenize import TweetTokenizer
 
 ####################################################
 # Main function
@@ -43,14 +41,17 @@ if __name__ == "__main__":
                       help="JSON file with the file description for each authors", required=True, extended=False)
     args.add_argument(command="--k", name="k", type=int, help="K-Fold Cross Validation", extended=False, default=10)
 
+    # Parameters
+    args.add_argument(command="--feature", name="feature", type=str, help="word,char,char_wb", default='word',
+                      required=False,
+                      extended=True)
+
     # Experiment output parameters
     args.add_argument(command="--name", name="name", type=str, help="Experiment's name", extended=False, required=True)
     args.add_argument(command="--description", name="description", type=str, help="Experiment's description",
                       extended=False, required=True)
     args.add_argument(command="--output", name="output", type=str, help="Experiment's output directory", required=True,
                       extended=False)
-    args.add_argument(command="--tweets", name="tweets", action='store_true',
-                      help="Test tweet classification rate?", default=False, extended=False)
     args.add_argument(command="--verbose", name="verbose", type=int, help="Verbose level", default=2, extended=False)
 
     # Parse arguments
@@ -77,8 +78,8 @@ if __name__ == "__main__":
     # Author list
     authors = pan17corpus.get_authors()
 
-    # Bag of word features
-    bow = nsNLP.features.BagOfWords()
+    # Tweet tokenizer
+    tknzr = TweetTokenizer()
 
     # Iterate
     for space in param_space:
@@ -97,6 +98,10 @@ if __name__ == "__main__":
         # Average
         average_k_fold = np.array([])
 
+        # Counters
+        male_word_counter = 0
+        female_word_counter = 0
+
         # For each fold
         for k, (train_set, test_set) in enumerate(cross_validation):
             # Set k
@@ -104,15 +109,25 @@ if __name__ == "__main__":
 
             # Add to author
             for index, author in enumerate(train_set):
-                author.get_texts()[0].x()
-                author.truth('gender')
+                words = tknzr.tokenize(author.get_texts()[0].x())
+                if author.truth('gender') == 'male':
+                    male_word_counter += len(words)
+                else:
+                    female_word_counter += len(words)
+                # end if
             # end for
 
             # Test the classifier
             for author in test_set:
-                # Prediction
-                author.get_texts()[0].x()
+                words = tknzr.tokenize(author.get_texts()[0].x())
+                if author.truth('gender') == 'male':
+                    male_word_counter += len(words)
+                else:
+                    female_word_counter += len(words)
+                # end if
             # end for
+            print("Male counter = {}".format(male_word_counter))
+            print("Female counter = {}".format(female_word_counter))
         # end for
     # end for
 
