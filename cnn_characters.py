@@ -134,6 +134,12 @@ if __name__ == "__main__":
     # Parse arguments
     args.parse()
 
+    # CNN
+    convnet = create_cnn(2, 20, 2, 10, 2, 2880, 400, 5, 1)
+    model_parameters = filter(lambda p: p.requires_grad, convnet.parameters())
+    print(sum([np.prod(p.size()) for p in model_parameters]))
+    exit()
+
     # Cuda
     use_cuda = not args.no_cuda and torch.cuda.is_available()
     print(use_cuda)
@@ -204,6 +210,11 @@ if __name__ == "__main__":
                 # CNN
                 convnet = create_cnn(args.n_grams, conv1_size, max_pool1_size, conv2_size, max_pool2_size, linear1_size,
                                      linear2_size, kernel_size, stride_size)
+
+                # Model parameters
+                model_parameters = filter(lambda p: p.requires_grad, convnet.parameters())
+                print(sum([np.prod(p.size()) for p in model_parameters]))
+                exit()
 
                 # CNN Model
                 classifier = nsNLP.deep_models.CNNModel\

@@ -167,7 +167,8 @@ if __name__ == "__main__":
 
             # Fit
             text_clf.fit(profile_X, profile_Y)
-
+            print(classifier.coef_.shape[-1])
+            exit()
             # Counters
             successes = 0.0
 

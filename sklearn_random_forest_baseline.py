@@ -159,6 +159,9 @@ if __name__ == "__main__":
             # Fit
             text_clf.fit(profile_X, profile_Y)
 
+            # Print parameters
+            print(classifier.n_features_)
+            exit()
             # Counters
             successes = 0.0
 
